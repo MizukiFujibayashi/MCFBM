@@ -1,4 +1,5 @@
 # MCFBM
+<p align="center"><img src="https://github.com/MizukiFujibayashi/MCFBM/blob/main/zebra1.png"></p>
 
 1. [About](#About)
 2. [Installation](#[Installation])
