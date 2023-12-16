@@ -55,16 +55,20 @@ Please execute syllable_detecter_edge.m on a computer connected to a microphone.
 
 ## Required
 
-**MATLAB 2020b**
+**python v3.8.8**
 
-Audio Toolbox
+cv2
 
-Deep Learning Toolbox
+numpy
 
-DSP System Toolbox
+pandas
 
-Image Processing Toolbox
+shelve
 
-Signal Processing Toolbox
+math
 
-Statistics and Machine Learning Toolbox
+os
+
+matplotlib.pyplot
+
+seaborn
