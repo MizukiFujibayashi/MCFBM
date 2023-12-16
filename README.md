@@ -61,14 +61,14 @@ cv2 4.7.0
 
 numpy 1.21.4
 
-pandas 1.4.2
-
-shelve
-
 math
-
-os
 
 matplotlib.pyplot
 
+os
+
+pandas 1.4.2
+
 seaborn
+
+shelve
