@@ -20,7 +20,7 @@ Installation will be completed instantly.
 **Clone this repository**
 
 ```bash
-$ git clone https://github.com/SAIBS-paper/SAIBS.git
+$ git clone https://github.com/MizukiFujibayashi/MCFBM.git
 ```
 
 
