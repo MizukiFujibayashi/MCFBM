@@ -53,15 +53,15 @@ Please execute syllable_detecter_edge.m on a computer connected to a microphone.
 
 
 
-## Required
+## Developed
 
 **python v3.8.8**
 
-cv2
+cv2 4.7.0
 
-numpy
+numpy 1.21.4
 
-pandas
+pandas 1.4.2
 
 shelve
 
