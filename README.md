@@ -1,16 +1,15 @@
 # MCFBM
 <p align="center"><img src="https://github.com/MizukiFujibayashi/MCFBM/blob/main/zebra1.png"></p>
 
-1. [About](#About)
-2. [Installation](#[Installation])
-3. [Required](#[Required])
+Now published in : 
 
 
 
 ## About
 
-These softwares are for analysing finch vocalizations.
+This software is for analyzing songbird behavior within an efficient and cost-effective marker-based motion capture system even applicable to multiple subjects tracking.
 
+Further, it could be applied to track any distinctly coloured objects.
 
 
 ## Installation
@@ -23,7 +22,7 @@ Installation will be completed instantly.
 $ git clone https://github.com/MizukiFujibayashi/MCFBM.git
 ```
 
-
+## Usage
 **fragment syllables**
 
 Prepare over 2000 song files recorded in SAP2011, etc.
