@@ -26,23 +26,23 @@ $ git clone https://github.com/MizukiFujibayashi/MCFBM.git
 
 Functions for tracking markers and bird location and body direction estimation are in https://github.com/MizukiFujibayashi/mocap_functions.py
 
-Several functions to summarize data for behavioral analysis are appended.
+Several functions to summarize data for behavioral analysis are included.
 
 ### Tracking markers
 
-**For single subject tracking**, use : `track`  
+**For single subject tracking** : `mocap_functions.track`  
 This also provides the x,y-coordinates of the center of bird shillhouete aquired by MoG background subtraction.
 
-**For multiple subjects tracking**, use : `track_mult`  
+**For multiple subjects tracking** : `mocap_functions.track_mult`  
 This is applicable to single subject tracking. 
 
 You need to specify several parameters including the initial position of markers. All parameters do not have to be specified very strictly as the combination of parameters would contribute to filter noise.
 
 ### Body location and direction estimation
 
-**For single subject**, use : `approx_body_ellipse`  
+**For single subject** : `mocap_functions.approx_body_ellipse`  
 
-**For multiple subjects**, use : `approx_body_ellipse_mult`  
+**For multiple subjects** : `mocap_functions.approx_body_ellipse_mult`  
 This is applicable for single subject. 
 
 ## Required
