@@ -55,9 +55,9 @@ Please execute syllable_detecter_edge.m on a computer connected to a microphone.
 
 ## Required
 
-cv2 4.7.0
+cv2
 
-numpy 1.21.4
+numpy
 
 math
 
@@ -65,7 +65,7 @@ matplotlib.pyplot
 
 os
 
-pandas 1.4.2
+pandas
 
 seaborn
 
@@ -75,4 +75,4 @@ shelve
 
 This architecture was developed with python v3.8.8 using OpenCV library v4.7.0. 
 
-The actual development environment is documented in the "https://github.com/MizukiFujibayashi/MCFBM/requirements.txt" file.
+The actual development environment is documented in the https://github.com/MizukiFujibayashi/MCFBM/requirements.txt.
