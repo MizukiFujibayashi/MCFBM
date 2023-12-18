@@ -54,6 +54,8 @@ Please execute syllable_detecter_edge.m on a computer connected to a microphone.
 
 ## Required
 
+**python**
+
 cv2
 
 numpy
