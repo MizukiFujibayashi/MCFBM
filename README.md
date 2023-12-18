@@ -23,34 +23,27 @@ $ git clone https://github.com/MizukiFujibayashi/MCFBM.git
 ```
 
 ## Usage
-**fragment syllables**
 
-Prepare over 2000 song files recorded in SAP2011, etc.
+Functions for tracking markers and bird location and body direction estimation are in https://github.com/MizukiFujibayashi/mocap_functions.py
 
-Execute a_make_data_plus_edge.m on MATLAB. Changing the threshold of Prewitt may improve syllable determination.
+Several functions to summarize data for behavioral analysis are appended.
 
+### Tracking markers
 
-**Cluster the fragmented syllables**
+**For single subject tracking**, use : `track`  
+This also provides the x,y-coordinates of the center of bird shillhouete aquired by MoG background subtraction.
 
-Execute b_tsne_DBSCAN.m. Changing each parameter of DBSCAN may improve clustering.
+**For multiple subjects tracking**, use : `track_mult`  
+This is applicable to single subject tracking. 
 
+You need to specify several parameters including the initial position of markers. All parameters do not have to be specified very strictly as the combination of parameters would contribute to filter noise.
 
-**Generate a learning machine**
+### Body location and direction estimation
 
-Execute c_AIC_CNN.m.
+**For single subject**, use : `approx_body_ellipse`  
 
-The entire process takes about 15 minutes in total.
-
-**Translate song files into text (Optional)**
-
-Execute d_corpas_plus_edge.m. Please align all parameters such as Prewitt's threshold with a_make_data_plus_edge.m.
-
-
-**Translate real-time voicing**
-
-Please execute syllable_detecter_edge.m on a computer connected to a microphone. At that time, please place the generated learning machine in the same directory.
-
-
+**For multiple subjects**, use : `approx_body_ellipse_mult`  
+This is applicable for single subject. 
 
 ## Required
 
