@@ -67,4 +67,4 @@ shelve
 
 ### Developed
 
-This architecture was developed with python v3.8.8 using OpenCV library v4.7.0. 
+This architecture was developed with python v3.8.8 using OpenCV library v4.7.0.72 
