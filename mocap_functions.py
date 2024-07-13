@@ -31,6 +31,7 @@ def get_frame_index(filepath,index:int,save=False,show=0):
     return frame
 
 def HSVonMouse(event, x, y, flags, params):   
+    img=params["img"]
     if event == cv2.EVENT_LBUTTONDOWN:#左クリックがされたら
         h = img[[y], [x]].T[0].flatten().mean()#
         s = img[[y], [x]].T[1].flatten().mean()
@@ -38,8 +39,9 @@ def HSVonMouse(event, x, y, flags, params):
         print("H: {}, S: {}, V: {}".format(h, s, v))
 
 def get_HSVonMouse(img):
+    param={"img":img}
     cv2.imshow('first', img)
-    cv2.setMouseCallback('first', HSVonMouse)
+    cv2.setMouseCallback('first', HSVonMouse,param)
     cv2.waitKey(0)
 
 def make_framemask(img,lower, upper):
@@ -143,9 +145,12 @@ def subtracted_ratio(fgm,contour):
     #cv2.imshow("img", fgm_)
     #if cv2.waitKey(0) & 0xFF == ord('q'):
         #cv2.destroyAllWindows()
-    return  np.sum(cnt_img*fgm)/np.sum(cnt_img/255)
+    if np.sum(cnt_img/255)==0:
+        return 0
+    else:
+        return  np.sum(cnt_img*fgm)/np.sum(cnt_img/255)
 
-def get_marker_centroid(img,fgmk,lower,upper,ref_point,thresh=None,scope=False,cir=0.1,area=5,rad=15,sat_thresh=100):
+def get_marker_centroid(img,fgmk,lower,upper,ref_point,thresh=None,scope=False,cir=0.1,area=5,rad=15,sat_thresh=100,animal="finch"):
     
     """
     """"""
@@ -240,14 +245,23 @@ def get_marker_centroid(img,fgmk,lower,upper,ref_point,thresh=None,scope=False,c
             #global C5
             #C5=contours5.copy()
             contours5=sorted(contours5[:2],key=lambda x:get_saturation(frame,x[0]),reverse=True)
+            #print("a")
             if get_saturation(frame,contours5[0][0])>sat_thresh and get_saturation(frame,contours5[1][0])>sat_thresh:
                 contours5=sorted(contours5[:2],key=lambda x:sum([(ref_point[i]-s)**2 for i, s in enumerate(get_moment(x[0]))]))
         if contours5[0][1]<0.1 or get_saturation(frame,contours5[0][0])<sat_thresh*0.6:
+            #print("b")
             """
             cv2.imshow("img", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
             """
+            if animal=="mice":
+                center, radius = cv2.minEnclosingCircle(contours5[0][0])
+                if scope:  
+                    center=(center[0]+x0,center[1]+y0)
+                else:
+                    #print(ref_point)
+                    pass
             return center, radius
         center, radius = cv2.minEnclosingCircle(contours5[0][0])
         if scope:  
@@ -267,7 +281,7 @@ def get_marker_centroid(img,fgmk,lower,upper,ref_point,thresh=None,scope=False,c
     """
     return center, radius
 
-def track(filepath,colors,thresh=None,scope=False,first_ind=0,first_points="manual",bird_area=600,cir=0.1,area=5,rad=15,sat_thresh=100,mog_thresh=300,weight=1):
+def track(filepath,colors,thresh=None,scope=False,first_ind=0,first_points="manual",bird_area=600,cir=0.1,area=5,rad=15,sat_thresh=100,mog_thresh=300,weight=1,animal="finch"):
     
     """
     """"""
@@ -390,7 +404,7 @@ def track(filepath,colors,thresh=None,scope=False,first_ind=0,first_points="manu
                 #paper fig
                 #if ind==460 and key=="top":
                     #return frame,fgmk,colors[key]["lower"],colors[key]["upper"],ref_point,thresh*(1+xyi),fgmask
-                center, radius= get_marker_centroid(frame,fgmk,colors[key]["lower"],colors[key]["upper"],ref_point,thresh*(1+xyi),scope=scope,cir=cir,area=area,rad=rad,sat_thresh=sat_thresh)
+                center, radius= get_marker_centroid(frame,fgmk,colors[key]["lower"],colors[key]["upper"],ref_point,thresh*(1+xyi),scope=scope,cir=cir,area=area,rad=rad,sat_thresh=sat_thresh,animal=animal)
                 #I[key+"_time"]=time.perf_counter()-st
                 #st=time.perf_counter()
                 I[key+"_x"]=center[0]
@@ -410,7 +424,7 @@ def track(filepath,colors,thresh=None,scope=False,first_ind=0,first_points="manu
     movie.release()
     return results
 
-def track_mult(filepath,colors,thresh=None,scope=False,first_ind=0,first_points={"s0":{"tip0":(),"tip0":()},"s1":{"tip1":(),"tip1":()}},bird_area=600,cir=0.1,area=5,rad=15,sat_thresh=100,mog_thresh=300,weight=1):
+def track_mult(filepath,colors,thresh=None,scope=False,first_ind=0,first_points={"s0":{"tip0":(),"tip0":()},"s1":{"tip1":(),"tip1":()}},bird_area=600,cir=0.1,area=5,rad=15,sat_thresh=100,mog_thresh=300,weight=1,cnt_img=None,animal="finch"):
     """
     """"""
     function to track markers of multiple subject
@@ -465,8 +479,12 @@ def track_mult(filepath,colors,thresh=None,scope=False,first_ind=0,first_points=
                 xyi=0
                 while True:
                     #ref_point=(results.iloc[-1][key+"_x"],results.iloc[-1][key+"_y"])
-                    xs={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys())+[key0] and s[-1]=="x"]]) if t!=None] for key0 in first_points.keys()}
-                    ys={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys())+[key0] and s[-1]=="y"]]) if t!=None] for key0 in first_points.keys()}
+                    if animal=="mice":
+                        xs={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys()) and s[-1]=="x"]]) if t!=None] for key0 in first_points.keys()}
+                        ys={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys()) and s[-1]=="y"]]) if t!=None] for key0 in first_points.keys()}
+                    else:
+                        xs={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys())+[key0] and s[-1]=="x"]]) if t!=None] for key0 in first_points.keys()}
+                        ys={key0:[t for t in list(results.iloc[-1-xyi][[s for s in list(results.columns) if s.split("_")[0] in list(first_points[key0].keys())+[key0] and s[-1]=="y"]]) if t!=None] for key0 in first_points.keys()}
                     if len(xs)==0 and len(ys)==0:#片方はありえない
                         xyi+=1
                     else:
@@ -504,6 +522,10 @@ def track_mult(filepath,colors,thresh=None,scope=False,first_ind=0,first_points=
             else:
                 fgmk={key0:np.full(fgmask.shape[:2], 255, dtype=np.uint8) for key0 in first_points.keys()}
                 bpos={key0:(None,None) for key0 in first_points.keys()}
+            #for kt,vt in fgmk.items():
+                #cv2.imshow(kt,vt)
+                #if cv2.waitKey(1) & 0xFF == ord('q'):
+                    #cv2.destroyAllWindows()
             ref_point={key0:(np.mean(xs[key0]),np.mean(ys[key0])) for key0 in xs.keys()}
             ref_point={key0:(min([ref_point[key0][0],frame.shape[1]]),min([ref_point[key0][1],frame.shape[0]])) for key0 in xs.keys()}
             for key in colors.keys():
@@ -512,9 +534,12 @@ def track_mult(filepath,colors,thresh=None,scope=False,first_ind=0,first_points=
                 #ref_point_c=tuple(results.iloc[-1][[s for s in list(results.columns) if s in [key+"_x",key+"_y"]]])
                 #center, radius= get_marker_centroid(frame,colors[key]["lower"],colors[key]["upper"],ref_point,ref_point_c=ref_point_c,thresh=thresh*(1+xyi),scope=scope)
                 #paper fig
-                #if ind==460 and key=="top":
+                #if ind==2135 and key=="tip1":
                     #return frame,fgmk,colors[key]["lower"],colors[key]["upper"],ref_point,thresh*(1+xyi),fgmask
-                center, radius= get_marker_centroid(frame,fgmk[sbj_dic[key]],colors[key]["lower"],colors[key]["upper"],rfp,thresh*(1+xyi),scope=scope,cir=cir,area=area,rad=rad,sat_thresh=sat_thresh)
+                if len(cnt_img)>0:
+                    center, radius= get_marker_centroid(cv2.bitwise_and(np.stack([cnt_img,cnt_img,cnt_img],2),frame),cv2.bitwise_and(cnt_img,fgmk[sbj_dic[key]]),colors[key]["lower"],colors[key]["upper"],rfp,thresh*(1+xyi),scope=scope,cir=cir,area=area,rad=rad,sat_thresh=sat_thresh,animal=animal)
+                else:
+                    center, radius= get_marker_centroid(frame,fgmk[sbj_dic[key]],colors[key]["lower"],colors[key]["upper"],rfp,thresh*(1+xyi),scope=scope,cir=cir,area=area,rad=rad,sat_thresh=sat_thresh,animal=animal)
                 I[key+"_x"]=center[0]
                 I[key+"_y"]=center[1]
                 I[key+"_r"]=radius
@@ -555,8 +580,9 @@ def track_out_movie(results,fileout,colors,filepath=None):
                 if key+"_r" in results.columns and results.loc[i,key+"_r"]!=None and not np.isnan(results.loc[i,key+"_r"]):
                     x_= [int(np.floor(results.loc[i,key+"_x"])),int(np.ceil(results.loc[i,key+"_x"]))][min(enumerate([results.loc[i,key+"_x"]-np.floor(results.loc[i,key+"_x"]),np.ceil(results.loc[i,key+"_x"])-results.loc[i,key+"_x"]]), key = lambda x:x[1])[0]]
                     y_= [int(np.floor(results.loc[i,key+"_y"])),int(np.ceil(results.loc[i,key+"_y"]))][min(enumerate([results.loc[i,key+"_y"]-np.floor(results.loc[i,key+"_y"]),np.ceil(results.loc[i,key+"_y"])-results.loc[i,key+"_y"]]), key = lambda x:x[1])[0]]
-                    r_=[int(np.floor(results.loc[i,key+"_r"])),int(np.ceil(results.loc[i,key+"_r"]))][min(enumerate([results.loc[i,key+"_r"]-np.floor(results.loc[i,key+"_r"]),np.ceil(results.loc[i,key+"_r"])-results.loc[i,key+"_r"]]), key = lambda x:x[1])[0]]
-                    cv2.circle(frame, (x_,y_), r_, colors[key]["color"], 3)
+                    if key+"_r" in results.columns:
+                        r_=[int(np.floor(results.loc[i,key+"_r"])),int(np.ceil(results.loc[i,key+"_r"]))][min(enumerate([results.loc[i,key+"_r"]-np.floor(results.loc[i,key+"_r"]),np.ceil(results.loc[i,key+"_r"])-results.loc[i,key+"_r"]]), key = lambda x:x[1])[0]]
+                        cv2.circle(frame, (x_,y_), r_, colors[key]["color"], 3)
                     cv2.circle(frame, (x_,y_), 1, colors[key]["color"], -1)
             video.write(frame)
         except Exception as e:
@@ -1602,8 +1628,12 @@ def get_silhouette_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),ma
                 if BS_Get:
                     #fgflow=np.zeros(fglabel.shape[:2], dtype=np.uint8)
                     m=fglabel.max()
-                    for si in [s for s in list(np.unique(fglabel)) if s>0]:
+                    sl=[s for s in list(np.unique(fglabel)) if s>0]
+                    r_dic={}
+                    for si in sl:
                         fgflow_inds=np.array(list(map(int,np.ravel(np.array(np.where(fglabel==si)).T+flow[np.where(fglabel==si)][:,[1,0]])))).reshape(-1,2).T
+                        r_dic[si]=fgflow_inds
+                    for si,fgflow_inds in r_dic.items():
                         fglabel[fgflow_inds[0],fgflow_inds[1]]=si+m
                     fglabel[(np.where((fglabel>0)&(fglabel<=m)))]=0
                     fglabel[np.where(fglabel>0)]=fglabel[np.where(fglabel>0)]-m
@@ -1646,8 +1676,10 @@ def get_silhouette_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),ma
                 fgmask=cv2.threshold(fglabel, 0, 255, cv2.THRESH_BINARY)[1]
                 fgc, hir = cv2.findContours(fgmask, cv2.RETR_CCOMP,cv2.CHAIN_APPROX_NONE)
                 fgc=[s[1] for s in enumerate(fgc) if hir[0][s[0]][-1]==-1]
-                fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
-            
+                #240404修正　エラーが出てなかったら関係ない
+                #fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
+                fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) if len(xs[key])>0 else 0 for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
+
             fgc4_uniq,fgc4_not_uniq=innerfnc_to_get_id_cntr(fgmask,fglabel,fgc2,xs,ys,ref_n)
         
             #fgmask_ = np.zeros(fgmask.shape[:2], dtype=np.uint8)
@@ -1710,8 +1742,12 @@ def get_silhouette_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),ma
                 continue
             
             m=fglabel.max()
-            for si in [s for s in list(np.unique(fglabel)) if s>0]:
-                fgflow_inds=np.array(list(map(int,np.ravel(np.array(np.where(fglabel==si)).T-flow[np.where(fglabel==si)][:,[1,0]])))).reshape(-1,2).T
+            sl=[s for s in list(np.unique(fglabel)) if s>0]
+            r_dic={}
+            for si in sl:
+                fgflow_inds=np.array(list(map(int,np.ravel(np.array(np.where(fglabel==si)).T+flow[np.where(fglabel==si)][:,[1,0]])))).reshape(-1,2).T
+                r_dic[si]=fgflow_inds
+            for si,fgflow_inds in r_dic.items():
                 fglabel[fgflow_inds[0],fgflow_inds[1]]=si+m
             fglabel[(np.where((fglabel>0)&(fglabel<=m)))]=0
             fglabel[np.where(fglabel>0)]=fglabel[np.where(fglabel>0)]-m
@@ -1743,8 +1779,11 @@ def get_silhouette_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),ma
                 fgmask=cv2.threshold(fglabel, 0, 255, cv2.THRESH_BINARY)[1]
                 fgc, hir = cv2.findContours(fgmask, cv2.RETR_CCOMP,cv2.CHAIN_APPROX_NONE)
                 fgc=[s[1] for s in enumerate(fgc) if hir[0][s[0]][-1]==-1]
-                fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
-            
+                
+                #240404修正　エラーが出てなかったら関係ない
+                #fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
+                fgc2=list(filter(lambda x: cv2.contourArea(x) >= bird_area and sum([int(cv2.pointPolygonTest(x, (int(xs[key][i]),int(ys[key][i])), measureDist=False)>=0) if len(xs[key])>0 else 0 for i in range(len(xs[key])) for key in xs.keys()])>0, fgc))
+
             fgc4_uniq,fgc4_not_uniq=innerfnc_to_get_id_cntr(fgmask,fglabel,fgc2,xs,ys,ref_n)
                 
             #fgmask_ = np.zeros(fgmask.shape[:2], dtype=np.uint8)
@@ -1792,7 +1831,7 @@ def get_silhouette_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),ma
 
 #ntime=datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 #savepath=("{}/{}".format(basepath,ntime+"_silhouette"),",filepath.split("\\")[-1])
-def approx_body_ellipse_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),math.ceil(70*2.1)],key=lambda x:x%2)[0],bird_area=600,sti=None,marker_out=0.25,mog_thresh=300,judge_range=100,display=False,savepath=None):
+def approx_body_ellipse_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.1),math.ceil(70*2.1)],key=lambda x:x%2)[0],bird_area=600,sti=None,marker_out=0.25,mog_thresh=300,judge_range=100,display=False,savepath=None,est_body_direct=True):
     """
     
     """"""
@@ -1859,7 +1898,7 @@ def approx_body_ellipse_mult(filepath,results,sbj,scope=sorted([math.floor(70*2.
                     results.loc[ix,key+"_el4_y"]=y4
                     results.loc[ix,key+"_elp_center_x"]=xc
                     results.loc[ix,key+"_elp_center_y"]=yc
-                    if not all([s in results.columns for s in sum([[sm+"_x",sm+"_y"] for sm in t_marks],[])]):
+                    if (not all([s in results.columns for s in sum([[sm+"_x",sm+"_y"] for sm in t_marks],[])])) or (not est_body_direct):
                         continue
                     
                     if (np.isnan(results.loc[ix,t_marks[0]+"_x"]) or np.isnan(results.loc[ix,t_marks[1]+"_x"])):
@@ -2149,11 +2188,13 @@ def direct_out_movie_mult(results,fileout,t_marks,colors,color=(255,0,0),filepat
             for key,t_mark in t_marks.items(): 
                 if t_mark[0]+"_x" in results.columns and not np.isnan(results.loc[i,t_mark[0]+"_x"]):
                     n1=(int(sorted([np.ceil(results.loc[i,t_mark[0]+"_x"]),np.floor(results.loc[i,t_mark[0]+"_x"])],key=lambda x:abs(results.loc[i,t_mark[0]+"_x"]-x))[0]),int(sorted([np.ceil(results.loc[i,t_mark[0]+"_y"]),np.floor(results.loc[i,t_mark[0]+"_y"])],key=lambda x:abs(results.loc[i,t_mark[0]+"_y"]-x))[0]))
-                    cv2.circle(frame, n1, 1, color[key], -1)
+                    cv2.circle(frame, n1, 3, color[key], -1)
+                
                 if all([t_mark[0]+"_x" in results.columns,t_mark[1]+"_x" in results.columns]) and not np.isnan(results.loc[i,t_mark[0]+"_x"]) and not np.isnan(results.loc[i,t_mark[1]+"_x"]):
                     n1=(int(sorted([np.ceil(results.loc[i,t_mark[0]+"_x"]),np.floor(results.loc[i,t_mark[0]+"_x"])],key=lambda x:abs(results.loc[i,t_mark[0]+"_x"]-x))[0]),int(sorted([np.ceil(results.loc[i,t_mark[0]+"_y"]),np.floor(results.loc[i,t_mark[0]+"_y"])],key=lambda x:abs(results.loc[i,t_mark[0]+"_y"]-x))[0]))
                     n2=(int(sorted([np.ceil(results.loc[i,t_mark[1]+"_x"]),np.floor(results.loc[i,t_mark[1]+"_x"])],key=lambda x:abs(results.loc[i,t_mark[1]+"_x"]-x))[0]),int(sorted([np.ceil(results.loc[i,t_mark[1]+"_y"]),np.floor(results.loc[i,t_mark[1]+"_y"])],key=lambda x:abs(results.loc[i,t_mark[1]+"_y"]-x))[0]))
                     cv2.line(frame, n1, n2, color[key], 3)
+                
             #cv2.imshow("img",  frame)
             #if cv2.waitKey(1) & 0xFF == ord('q'):
                 #cv2.destroyAllWindows()
@@ -2170,3 +2211,32 @@ def direct_out_movie_mult(results,fileout,t_marks,colors,color=(255,0,0),filepat
             break
     video.release()
     movie.release()
+
+def get_rotated_vec(ADBD,rotate_angle):
+    theta = np.deg2rad(rotate_angle)
+    rotateMat = np.matrix([
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta), np.cos(theta)],
+    ])
+    cxy = (rotateMat * ADBD)
+    return cxy
+
+def get_local_coordinate(ex,ey,origin,coordinate):
+    dim=ex.shape[0]
+    #print(dim)
+    R_GtoL = np.identity(dim+1)
+    R_GtoL[:dim, :dim] = np.array([ex, ey])
+    R_GtoL[:dim, dim] = - np.dot(np.array([ex, ey]), origin)
+    return np.dot(R_GtoL,np.array(list(coordinate)+[1]))[:dim]
+#おもろい
+def getNearestValue(list, num):
+    """
+    概要: リストからある値に最も近い値を返却する関数
+    @param list: データ配列
+    @param num: 対象値
+    @return 対象値に最も近い値
+    """
+
+    # リスト要素と対象値の差分を計算し最小値のインデックスを取得
+    idx = np.abs(np.asarray(list) - num).argmin()
+    return list[idx]
