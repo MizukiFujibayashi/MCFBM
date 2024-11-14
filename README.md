@@ -1,7 +1,7 @@
 # MCFBM
 <p align="center"><img src="https://github.com/MizukiFujibayashi/MCFBM/blob/main/zebra1.png"></p>
 
-Now published in : 
+Now published in : https://doi.org/10.1016/j.crmeth.2024.100844
 
 
 
@@ -43,7 +43,7 @@ You need to specify several parameters including the initial position of markers
 **For single subject** : `mocap_functions.approx_body_ellipse`  
 
 **For multiple subjects** : `mocap_functions.approx_body_ellipse_mult`  
-This is applicable for single subject. 
+This is also applicable for single subject. 
 
 ## Required
 
